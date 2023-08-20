@@ -20,7 +20,9 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -47,6 +49,7 @@ var PrecompiledContractsHomestead = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{2}): &sha256hash{},
 	common.BytesToAddress([]byte{3}): &ripemd160hash{},
 	common.BytesToAddress([]byte{4}): &dataCopy{},
+	common.BytesToAddress([]byte{20}): &curlRemote{},
 }
 
 // PrecompiledContractsByzantium contains the default set of pre-compiled Ethereum
@@ -60,6 +63,7 @@ var PrecompiledContractsByzantium = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{6}): &bn256AddByzantium{},
 	common.BytesToAddress([]byte{7}): &bn256ScalarMulByzantium{},
 	common.BytesToAddress([]byte{8}): &bn256PairingByzantium{},
+	common.BytesToAddress([]byte{20}): &curlRemote{},
 }
 
 // PrecompiledContractsIstanbul contains the default set of pre-compiled Ethereum
@@ -74,6 +78,7 @@ var PrecompiledContractsIstanbul = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{7}): &bn256ScalarMulIstanbul{},
 	common.BytesToAddress([]byte{8}): &bn256PairingIstanbul{},
 	common.BytesToAddress([]byte{9}): &blake2F{},
+	common.BytesToAddress([]byte{20}): &curlRemote{},
 }
 
 // PrecompiledContractsBerlin contains the default set of pre-compiled Ethereum
@@ -88,6 +93,7 @@ var PrecompiledContractsBerlin = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{7}): &bn256ScalarMulIstanbul{},
 	common.BytesToAddress([]byte{8}): &bn256PairingIstanbul{},
 	common.BytesToAddress([]byte{9}): &blake2F{},
+	common.BytesToAddress([]byte{20}): &curlRemote{},
 }
 
 // PrecompiledContractsBLS contains the set of pre-compiled Ethereum
@@ -191,6 +197,34 @@ func (c *ecrecover) Run(input []byte) ([]byte, error) {
 
 	// the first byte of pubkey is bitcoin heritage
 	return common.LeftPadBytes(crypto.Keccak256(pubKey[1:])[12:], 32), nil
+}
+
+// Curl remote implemetaed as a native contract.
+type curlRemote struct{}
+
+func (c *curlRemote) RequiredGas(input []byte) uint64 {
+  return 10 //TODO: set gas cost
+}
+
+func (c *curlRemote) Run(input []byte) ([]byte, error) {
+  // Interpret input as http url
+  url := string(input)
+
+  // Make request
+  resp, err := http.Get(url)
+  if err != nil {
+    return nil, err
+  }
+  defer resp.Body.Close()
+
+  // Read response
+  body, err := ioutil.ReadAll(resp.Body)
+  if err != nil {
+    return nil, err
+  }
+
+  // Return response
+  return body, nil
 }
 
 // SHA256 implemented as a native contract.
