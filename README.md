@@ -1,3 +1,20 @@
+# OP Curl Geth
+
+Optimism-Geth Execution Layer OP Stack Hack. Enables smart contracts to access the internet at execution time. Requires a trusted sequencer, which makes the curl ( currently just http get ) request thru a precompile at address `0x14` (20). The sequencer stores returned http values in a file to distibute to nodes, so they can use the returned value in the smart contract without relying on making an http internet call ( the endpoint probably won't return the same value on different nodes at different times ).
+
+## Features
+- Add precompile at `0x14` to make http get call
+- Sequencer stores returned value into datadir
+- Procompiles gain access to block context, needed to id get urls in curl datastore
+
+## Use
+
+```
+string memory _url = "http://localhost:5090/integer";
+(bool ok, bytes memory out) = address(0x14).staticcall(bytes(_url));
+require(ok, "call failed");
+```
+
 ## Go Ethereum
 
 Official Golang execution layer implementation of the Ethereum protocol.
