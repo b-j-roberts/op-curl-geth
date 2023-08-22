@@ -529,6 +529,12 @@ var (
 		Category: flags.MinerCategory,
 	}
 
+  SequencerEnabledFlag = &cli.BoolFlag{
+    Name:     "sequencer",
+    Usage:    "Enable sequencer",
+    Category: flags.MinerCategory,
+  }
+
 	// Account settings
 	UnlockedAccountFlag = &cli.StringFlag{
 		Name:     "unlock",
@@ -1457,6 +1463,7 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setNodeUserIdent(ctx, cfg)
 	SetDataDir(ctx, cfg)
 	setSmartCard(ctx, cfg)
+  vm.PrecompileConfig.NodeConfig = cfg
 
 	if ctx.IsSet(JWTSecretFlag.Name) {
 		cfg.JWTSecret = ctx.String(JWTSecretFlag.Name)
@@ -1825,7 +1832,11 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 	// Only configure sequencer http flag if we're running in verifier mode i.e. --mine is disabled.
 	if ctx.IsSet(RollupSequencerHTTPFlag.Name) && !ctx.IsSet(MiningEnabledFlag.Name) {
 		cfg.RollupSequencerHTTP = ctx.String(RollupSequencerHTTPFlag.Name)
+    vm.PrecompileConfig.SequencerHTTP = cfg.RollupSequencerHTTP
 	}
+  if ctx.IsSet(SequencerEnabledFlag.Name) {
+    vm.PrecompileConfig.IsSequencer = true
+  }
 	if ctx.IsSet(RollupHistoricalRPCFlag.Name) {
 		cfg.RollupHistoricalRPC = ctx.String(RollupHistoricalRPCFlag.Name)
 	}
